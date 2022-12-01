@@ -1,2 +1,2 @@
-# ReaLly_BaD_Idea
+# Team Access Code
 ELEC 424 Final Project
