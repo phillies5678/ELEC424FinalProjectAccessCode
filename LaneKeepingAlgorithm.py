@@ -11,13 +11,13 @@ import time
 # based on: https://www.instructables.com/Autonomous-Lane-Keeping-Car-Using-Raspberry-Pi-and/
 
 # Throttle
-current_speed = 1550000
+current_speed = 1600000
 
 # Lists for graphs
 speed_list = []
 steering_list = []
 
-max_speed = 1600000
+max_speed = 1650000
 speed_step = 2500
 throttlePin = "P8_13"
 go_forward = 7.91
@@ -198,7 +198,7 @@ def go():
     current_speed = 1650000
 
     with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
-        filetowrite.write('1643000')
+        filetowrite.write('1644500')
 
 def boost():
     global current_speed
@@ -206,7 +206,7 @@ def boost():
     current_speed = 1655000
 
     with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
-        filetowrite.write('1644000')  
+        filetowrite.write('1650000')  
 
 
 
@@ -559,9 +559,9 @@ while counter < max_ticks:
                 time.sleep(4)
                 passedFirstStopSign = True
                 # this is used to not check for the second stop sign until many frames later
-                secondStopSignTick = counter + 15
+                secondStopSignTick = counter + 4       
                 # now check for stop sign less frequently
-                stopSignCheck = 3
+                stopSignCheck = 10
                 # add a delay to calling go faster
                 go_faster_tick = counter + go_faster_tick_delay
                 print("first stop finished!")
@@ -570,6 +570,8 @@ while counter < max_ticks:
 
         # check for the second stop sign
         elif passedFirstStopSign and counter > secondStopSignTick:
+            print(secondStopSignTick)
+            print (counter)
             isStop2SignBool, _ = isRedFloorVisible(frame)
             # print("is a floor stop: ", isStopSignBool)
             if isStop2SignBool:
