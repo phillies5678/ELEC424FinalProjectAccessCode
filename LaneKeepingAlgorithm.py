@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import math
 import sys
@@ -10,6 +12,10 @@ import time
 
 # Throttle
 current_speed = 1550000
+
+# Lists for graphs
+speed_list = []
+steering_list = []
 
 max_speed = 1600000
 speed_step = 2500
@@ -168,6 +174,10 @@ def stop():
     :return: none
     """
 
+    global current_speed
+
+    current_speed = 1550000
+
     with open('/dev/bone/pwm/1/a/period', 'w') as filetowrite:
         filetowrite.write('20000000')
     with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
@@ -185,9 +195,18 @@ def go():
     """
     global current_speed
 
+    current_speed = 1650000
 
     with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
-        filetowrite.write('1647000')
+        filetowrite.write('1643000')
+
+def boost():
+    global current_speed
+
+    current_speed = 1655000
+
+    with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
+        filetowrite.write('1644000')  
 
 
 
@@ -540,13 +559,15 @@ while counter < max_ticks:
                 time.sleep(4)
                 passedFirstStopSign = True
                 # this is used to not check for the second stop sign until many frames later
-                secondStopSignTick = counter + 75
+                secondStopSignTick = counter + 15
                 # now check for stop sign less frequently
                 stopSignCheck = 3
                 # add a delay to calling go faster
                 go_faster_tick = counter + go_faster_tick_delay
                 print("first stop finished!")
                 go()
+
+
         # check for the second stop sign
         elif passedFirstStopSign and counter > secondStopSignTick:
             isStop2SignBool, _ = isRedFloorVisible(frame)
@@ -584,6 +605,9 @@ while counter < max_ticks:
     derivative = kd * (error - lastError) / dt
 
     # take values for graphs
+    p_vals.append(proportional)
+    d_vals.append(derivative)
+    err_vals.append(error)
 
 
     # determine actual turn to do
@@ -606,6 +630,22 @@ while counter < max_ticks:
         
         turn(turn_amt)
 
+    steer_pwm.append(turn_amt)
+    speed_pwm.append(current_speed)
+
+    lastError = error
+    lastTime = time.time()
+
+    # Use speed encoding to give the car a 'boost' if needed
+    with open('/sys/module/gpiod_driver/parameters/diff') as f:
+        lines = f.readlines()
+        if lines:
+            dif = int(lines[0])
+            print("Received difference of " + str(dif))
+            if dif > 100:
+                boost()
+                current_speed = 1650000
+
     # turn! 
     #PWM.set_duty_cycle(steeringPin, turn_amt)
 
@@ -624,11 +664,7 @@ while counter < max_ticks:
 stop()
 video.release()
 cv2.destroyAllWindows()
-#PWM.set_duty_cycle(throttlePin, 7.5)
-#PWM.set_duty_cycle(steeringPin, 7.5)
-#PWM.stop(throttlePin)
-#PWM.stop(steeringPin)
-#PWM.cleanup()
+
 
 plot_pd(p_vals, d_vals, err_vals, True)
 plot_pwm(speed_pwm, steer_pwm, err_vals, True)
