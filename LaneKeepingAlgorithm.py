@@ -44,7 +44,7 @@ def isRedFloorVisible(frame):
     :param frame: Image
     :return: [(True is the camera sees a red on the floor, false otherwise), video output]
     """
-    print("Checking for floor stop")
+    # print("Checking for floor stop")
     boundaries = getRedFloorBoundaries()
     return isMostlyColor(frame, boundaries)
 
@@ -63,7 +63,7 @@ def isTrafficRedLightVisible(frame):
     :param frame:
     :return: [(True is the camera sees a stop light, false otherwise), video output]
     """
-    print("Checking for traffic stop")
+    #print("Checking for traffic stop")
     boundaries = getTrafficRedLightBoundaries()
     return isMostlyColor(frame, boundaries)
 
@@ -108,7 +108,7 @@ def isMostlyColor(image, boundaries):
 
     #Calculate what percentage of image falls between color boundaries
     percentage_detected = np.count_nonzero(mask) * 100 / np.size(mask)
-    print("percentage_detected " + str(percentage_detected) + " lower " + str(lower) + " upper " + str(upper))
+    #print("percentage_detected " + str(percentage_detected) + " lower " + str(lower) + " upper " + str(upper))
     # If the percentage percentage_detected is betweeen the success boundaries, we return true, otherwise false for result
     result = percentage[0] < percentage_detected <= percentage[1]
     if result:
@@ -158,13 +158,6 @@ def initialize_car():
     #input()
     #PWM.start(steeringPin, dont_move, frequency=50)
         
-    with open('/dev/bone/pwm/1/b/period', 'w') as filetowrite:
-        filetowrite.write('20000000')
-    with open('/dev/bone/pwm/1/b/duty_cycle', 'w') as filetowrite:
-        filetowrite.write('1500000')
-    with open('/dev/bone/pwm/1/b/enable', 'w') as filetowrite:
-        filetowrite.write('1')
- 
 
 def stop():
 
@@ -194,7 +187,19 @@ def go():
 
 
     with open('/dev/bone/pwm/1/a/duty_cycle', 'w') as filetowrite:
-        filetowrite.write('1650000')
+        filetowrite.write('1647000')
+
+
+
+def turn(turn_amt):
+    pwm = int(turn_amt * 200000)
+    print("Turning w duty cycle: " + str(pwm))
+    with open('/dev/bone/pwm/1/b/duty_cycle', 'w') as filetowrite:
+        filetowrite.write(str(int(pwm)))
+
+    
+    
+
 
 
 def turn_right():
@@ -308,7 +313,7 @@ def average_slope_intercept(frame, line_segments):
     lane_lines = []
 
     if line_segments is None:
-        print("no line segments detected")
+        #print("no line segments detected")
         return lane_lines
 
     height, width, _ = frame.shape
@@ -535,7 +540,7 @@ while counter < max_ticks:
                 time.sleep(4)
                 passedFirstStopSign = True
                 # this is used to not check for the second stop sign until many frames later
-                secondStopSignTick = counter + 200
+                secondStopSignTick = counter + 75
                 # now check for stop sign less frequently
                 stopSignCheck = 3
                 # add a delay to calling go faster
@@ -584,21 +589,24 @@ while counter < max_ticks:
     # determine actual turn to do
     turn_amt = base_turn + proportional + derivative
 
+    print("turn amnt: " + str(turn_amt))
+
     # caps turns to make PWM values
-    if 7.2 < turn_amt < 7.8:
-        print("Turning straight")
+    if 7.4 < turn_amt < 7.6:
+        #print("Turning straight")
         turn_straight()
         #turn_amt = 7.5
-    elif turn_amt > left:
-        print("Turning left")
-        turn_left()
-        #turn_amt = left
-    elif turn_amt < right:
-        print("Turning right")
-        turn_right()
-        #turn_amt = right
+    else: 
+        if turn_amt < 6:
+            print("raising low value")
+            turn_amt = 6
+        elif turn_amt > 9:
+            print("lowering high value")
+            turn_amt = 9
+        
+        turn(turn_amt)
 
-    # turn!
+    # turn! 
     #PWM.set_duty_cycle(steeringPin, turn_amt)
 
     # update PD values for next loop
