@@ -15,10 +15,14 @@ struct gpio_desc *buttondesc;
 // Int for our interrupt
 int buttonIRQ;
 
+// Current time
 ktime_t currTime;
+// Previous time
 ktime_t prevTime;
+//Different
 int diff;
 
+// Print out the difference to a file
 module_param(diff, int, S_IRUGO);
 
 /* ADD THE INTERRUPT SERVICE ROUTINE HERE */
@@ -37,9 +41,6 @@ static irq_handler_t gpio_irq_handler(unsigned int irq, void *dev_id, struct pt_
 	}
 
 	printk("Received difference of: %d\n", diff);
-
-
-	
 
 	prevTime = currTime;
 
